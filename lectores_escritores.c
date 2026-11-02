@@ -9,7 +9,7 @@
 
 #define _POSIX_C_SOURCE 200809L  // Solicita las interfaces POSIX que necesita nanosleep().
 
-#include <pthread.h>  // Declara mutexes, variables de condición e hilos POSIX.
+#include <pthread.h> // Declara mutexes, variables de condición e hilos POSIX.
 #include <stdio.h>    // Declara printf() para mostrar lo que ocurre.
 #include <stdlib.h>   // Declara EXIT_SUCCESS y EXIT_FAILURE.
 #include <time.h>     // Declara nanosleep() y struct timespec.
