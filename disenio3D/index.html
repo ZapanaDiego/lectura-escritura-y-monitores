@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#070b14">
+  <meta name="description" content="Laboratorio 3D interactivo para aprender sincronización: lectores y escritores, monitores, mutex, kernel y hardware.">
+  <title>La carrera de datos · Laboratorio de Sincronización</title>
+  <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./css/estilos.css">
+</head>
+<body>
+  <header class="cabecera">
+    <a class="marca" href="./index.html" aria-label="Laboratorio de Sincronización, inicio">
+      <span class="marca__icono" aria-hidden="true">
+        <svg viewBox="0 0 32 32" width="26" height="26" fill="none">
+          <circle cx="16" cy="16" r="9" stroke="currentColor" stroke-width="1.6"/>
+          <circle cx="16" cy="16" r="3" fill="currentColor"/>
+          <path d="M16 3v6M16 23v6M3 16h6M23 16h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+      </span>
+      <span class="marca__texto">
+        <strong>Lab de Sincronización</strong>
+        <small>sistemas operativos · 3D</small>
+      </span>
+    </a>
+
+    <nav class="ruta" aria-label="Ruta de aprendizaje">
+      <ol class="ruta__lista">
+        <li class="ruta__item ruta__item--activo" aria-current="step"><span>01</span> Recurso</li>
+        <li class="ruta__item ruta__item--bloqueado"><span>02</span> Mutex</li>
+        <li class="ruta__item ruta__item--bloqueado"><span>03</span> Kernel</li>
+        <li class="ruta__item ruta__item--bloqueado"><span>04</span> Condición</li>
+        <li class="ruta__item ruta__item--bloqueado"><span>05</span> Lectores/Escritores</li>
+        <li class="ruta__item ruta__item--bloqueado"><span>06</span> Monitor</li>
+        <li class="ruta__item ruta__item--bloqueado"><span>07</span> Flujo</li>
+      </ol>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <p class="eyebrow"><span class="eyebrow__punto"></span> Iteración 1-B · Qué, cómo, por qué y dónde</p>
+      <h1>Dos hilos.<br><span class="hero__degradado">Un saldo que se pierde.</span></h1>
+      <p class="hero__texto">
+        Dos clientes depositan 100 en la misma cuenta al mismo tiempo. El resultado debería ser
+        1200, pero la forma en que se mezclan sus operaciones puede hacer desaparecer un depósito.
+      </p>
+      <div class="hero__pistas" aria-label="Conceptos de esta iteración">
+        <span>Recurso compartido</span>
+        <span>Concurrencia</span>
+        <span>Sin mutex</span>
+        <span>Condición de carrera</span>
+      </div>
+    </section>
+
+    <section class="laboratorio" aria-label="Simulación de la carrera de datos">
+      <div class="stage" id="stage">
+        <div class="stage__barra">
+          <span class="badge badge--peligro">
+            <span class="badge__punto" aria-hidden="true"></span>
+            SIN SINCRONIZACIÓN
+          </span>
+          <span class="stage__ayuda">Arrastra para explorar</span>
+        </div>
+
+        <div id="escena-carrera" class="escena" aria-label="Escena 3D: dos hilos leen y escriben un saldo compartido"></div>
+
+        <div class="stage__pie">
+          <div class="dato">
+            <span class="dato__label">Saldo en memoria</span>
+            <strong id="saldo-3d">1000</strong>
+          </div>
+          <div class="dato">
+            <span class="dato__label">Esperado</span>
+            <strong class="texto-verde">1200</strong>
+          </div>
+          <div class="leyenda" aria-label="Leyenda de colores">
+            <span><i class="punto punto--verde" aria-hidden="true"></i> lectura</span>
+            <span><i class="punto punto--ambar" aria-hidden="true"></i> escritura</span>
+          </div>
+        </div>
+      </div>
+
+      <aside class="panel">
+        <div class="panel__cabecera">
+          <span class="panel__etiqueta" id="paso-numero">PASO 0 DE 6</span>
+          <span class="panel__chip">ITERACIÓN 1-B</span>
+        </div>
+
+        <div class="ficha">
+          <h2 class="ficha__titulo" id="paso-titulo">Dos depósitos concurrentes</h2>
+
+          <div class="ficha__tabs" role="tablist" aria-label="Explicación del paso">
+            <button class="ficha__tab" id="tab-que" role="tab" aria-selected="true" aria-controls="panel-que" data-tab="que" type="button">Qué</button>
+            <button class="ficha__tab" id="tab-como" role="tab" aria-selected="false" aria-controls="panel-como" data-tab="como" type="button">Cómo</button>
+            <button class="ficha__tab" id="tab-porque" role="tab" aria-selected="false" aria-controls="panel-porque" data-tab="porque" type="button">Por qué</button>
+            <button class="ficha__tab" id="tab-donde" role="tab" aria-selected="false" aria-controls="panel-donde" data-tab="donde" type="button">Dónde</button>
+          </div>
+
+          <div class="ficha__cuerpo" id="panel-paso" aria-live="polite">
+            <div class="ficha__panel" id="panel-que" role="tabpanel" aria-labelledby="tab-que" data-panel="que">
+              <p id="paso-texto">
+                Dos hilos intentan depositar 100 cada uno en el mismo saldo. Ejecuta la
+                simulación para ver qué ocurre.
+              </p>
+            </div>
+            <div class="ficha__panel" id="panel-como" role="tabpanel" aria-labelledby="tab-como" data-panel="como" hidden>
+              <p id="paso-como">
+                Cada depósito es leer, sumar y escribir. Son tres pasos separados.
+              </p>
+            </div>
+            <div class="ficha__panel" id="panel-porque" role="tabpanel" aria-labelledby="tab-porque" data-panel="porque" hidden>
+              <p id="paso-porque">
+                Si las operaciones se intercalan, el resultado puede ser incorrecto.
+              </p>
+            </div>
+            <div class="ficha__panel" id="panel-donde" role="tabpanel" aria-labelledby="tab-donde" data-panel="donde" hidden>
+              <p id="paso-donde">
+                Aplicación y memoria compartida. Todavía no hay mutex ni intervención del kernel.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="resultado resultado--neutro" id="resultado" data-tono="neutro" aria-live="polite">
+          <div class="resultado__fila">
+            <div class="resultado__dato">
+              <span class="resultado__label" id="resultado-label">Saldo actual</span>
+              <strong id="resultado-valor">1000</strong>
+            </div>
+            <div class="resultado__dato">
+              <span class="resultado__label">Esperado</span>
+              <strong id="resultado-esperado" class="texto-verde">1200</strong>
+            </div>
+          </div>
+          <p class="resultado__nota" id="resultado-nota">Aún no se ejecutó ninguna operación.</p>
+        </div>
+
+        <div class="controles">
+          <button id="btn-principal" class="btn btn--principal" type="button">
+            Ejecutar sin sincronización
+          </button>
+          <div class="controles__fila">
+            <button id="btn-paso" class="btn" type="button">Paso a paso</button>
+            <button id="btn-reiniciar" class="btn btn--fantasma" type="button">Reiniciar</button>
+          </div>
+        </div>
+
+        <details class="detalle" id="detalle-codigo">
+          <summary>Código y caso límite</summary>
+          <p id="codigo-explicacion">
+            La operación <code>saldo += 100</code> no es atómica: primero se lee el saldo,
+            luego se suma y finalmente se escribe.
+          </p>
+          <pre><code id="codigo-fragmento"><span class="code-com">// el mismo saldo para los dos hilos</span>
+<span class="code-var">long</span> saldo = <span class="code-num">1000</span>;</code></pre>
+        </details>
+
+        <details class="detalle" id="detalle-conceptos">
+          <summary>Conceptos de este paso</summary>
+          <div class="conceptos" id="conceptos"></div>
+          <p class="concepto-definicion" id="concepto-definicion">
+            Toca un concepto para ver su definición.
+          </p>
+        </details>
+
+        <details class="detalle" id="registro-detalle">
+          <summary id="registro-resumen">Registro de eventos (0)</summary>
+          <ol id="registro" class="registro"></ol>
+        </details>
+      </aside>
+    </section>
+
+    <section class="explicacion" aria-labelledby="explicacion-titulo">
+      <div class="explicacion__intro">
+        <p class="eyebrow">La idea central</p>
+        <h2 id="explicacion-titulo">Leer y escribir no ocurre en un solo instante</h2>
+        <p>
+          Cada operación sobre el saldo son varios pasos. Si dos hilos intercalan esos pasos,
+          el estado compartido termina siendo distinto del esperado. A esto se le llama
+          <strong>condición de carrera</strong>.
+        </p>
+      </div>
+
+      <div class="tarjetas">
+        <article class="tarjeta">
+          <span class="tarjeta__num">01</span>
+          <h3>Leer</h3>
+          <p>El hilo copia el saldo actual en su propio registro.</p>
+        </article>
+        <article class="tarjeta">
+          <span class="tarjeta__num">02</span>
+          <h3>Calcular</h3>
+          <p>Suma 100 usando la copia que leyó, no el saldo real.</p>
+        </article>
+        <article class="tarjeta">
+          <span class="tarjeta__num">03</span>
+          <h3>Escribir</h3>
+          <p>Guarda el resultado y puede sobrescribir el de otro hilo.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="resumen" aria-labelledby="resumen-titulo">
+      <div class="resumen__intro">
+        <p class="eyebrow">Resumen del módulo</p>
+        <h2 id="resumen-titulo">Tres ideas para llevarte</h2>
+      </div>
+      <ol class="resumen__lista">
+        <li>
+          <span class="resumen__num">01</span>
+          <div>
+            <strong>Recurso compartido</strong>
+            <p>Un archivo, una tabla o un saldo puede ser leído y modificado por varios hilos.</p>
+          </div>
+        </li>
+        <li>
+          <span class="resumen__num">02</span>
+          <div>
+            <strong>Acciones intercaladas</strong>
+            <p>Si dos hilos leen antes de escribir, el segundo write puede borrar el primero.</p>
+          </div>
+        </li>
+        <li>
+          <span class="resumen__num">03</span>
+          <div>
+            <strong>Reglas de sincronización</strong>
+            <p>La solución empieza por proteger la sección crítica; el mutex es la siguiente pieza.</p>
+          </div>
+        </li>
+      </ol>
+    </section>
+
+    <section class="siguiente" aria-label="Siguiente iteración">
+      <div>
+        <p class="eyebrow">Siguiente iteración</p>
+        <h2>Mutex y camino rápido</h2>
+        <p>
+          Veremos cómo un mutex evita la carrera y en qué parte del sistema se resuelve:
+          una instrucción atómica en la CPU, sin entrar al kernel cuando no hay contención.
+        </p>
+      </div>
+      <span class="candado">BLOQUEADO</span>
+    </section>
+  </main>
+
+  <footer class="pie">
+    <p>Laboratorio de Sincronización · Iteración 1-B de 9</p>
+    <p>Modelo didáctico basado en POSIX/pthreads. Tres dimensiones: Three.js.</p>
+  </footer>
+
+  <noscript>
+    <p class="aviso-noscript">
+      Esta animación necesita JavaScript para mostrar la simulación 3D. El contenido explicativo
+      sigue disponible en esta página.
+    </p>
+  </noscript>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "./vendor/three/three.module.min.js"
+      }
+    }
+  </script>
+  <script type="module" src="./js/principal.js"></script>
+</body>
+</html>
